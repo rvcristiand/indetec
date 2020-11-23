@@ -1,0 +1,15 @@
+*.bbl
+*..blg
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.tex.bbl
+*.tex.blg
+*.toc
+*~
