@@ -4,11 +4,19 @@
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
 
+\usepackage{hyperref}
+
 \usepackage{bm}
 
 \usepackage{nicematrix}
 
 \usepackage{stanli}
+
+\usepackage{listings}
+\lstset{
+  breaklines=true,
+}
+\usepackage{dirtree}
 
 \usepackage[style=apa,citestyle=apa]{biblatex}
 % \DefineBibliographyStrings{spanish}{%
@@ -42,26 +50,6 @@
 \logo{\includegraphics[height=1.5cm]{escudo_unal.png}}
 % ---
 
-% --- contenido en cada sección
-\AtBeginSection[]
-{
-  \begin{frame}
-    \vfill
-    \centering
-    \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
-      \usebeamerfont{title}\secname\par%
-    \end{beamercolorbox}
-  \end{frame}
-}
-\AtBeginSubsection[]
-{
-  \begin{frame}
-    \frametitle{Tabla de contenido}
-    \tableofcontents[currentsubsection]
-  \end{frame}
-}
-% ---
-
 \begin{document}
 
 \begin{frame}
@@ -75,22 +63,53 @@
 \end{frame}
 
 \section{Introducción}
-\subsection{pyFEM}
 \begin{frame}
-  \frametitle{pyFEM y FEM.js}
-  pyFEM: programa de computador para el análisis de estructuras en tres dimensiones tipo pórtico sometidas a cargas estáticas.
+  \frametitle{Introducción}
+  \begin{block}{Definición}
+    pyFEM: programa de computador para el análisis de estructuras en tres dimensiones tipo pórtico sometidas a cargas estáticas.    
+  \end{block}
+
+  \begin{columns}
+    \column{0.5\textwidth}
+    \dirtree{%
+      .1 pyFEM.
+      .2 pyFEM.
+      .3 classtools.py.
+      .3 core.py.
+      .3 primitives.py.
+      .2 test.
+      .3 space\_frame.py.
+      .3 trusses.py.
+      .2 LICENSE.
+      .3 README.md.
+    }
+    \column{0.5\textwidth}
+    \href{https://github.com/rvcristiand/pyFEM}{github.com/rvcristiand/pyFEM}
+  \end{columns}
 \end{frame}
 
-\subsection{FEM.js}
 \begin{frame}
-  \frametitle{FEM.js}
-  FEM.js: programa de computador para visualizar estructuras tridimensionales.
+  \frametitle{Introducción}
+  \begin{block}{Definción}
+    FEM.js: programa de computador para visualizar estructuras tridimensionales.
+  \end{block}
+  \begin{columns}
+    \column{0.5\textwidth}
+    \begin{figure}
+      \includegraphics[width=1\textwidth]{FEM.js.png}
+      \caption{FEM.js ejecutandose en el navegador de internet.}
+    \end{figure}
+    \column{0.5\textwidth}
+    \href{https://github.com/rvcristiand/FEM.js}{github.com/rvcristiand/FEM.js} \\
+    
+    \href{https://rvcristiand.github.io/FEM.js}{rvcristiand.github.io/FEM.js}
+  \end{columns}
 \end{frame}
 
 \section{pyFEM}
-\subsection{Elemento tipo pórtico}
 \begin{frame}
-  \frametitle{Elemento tipo pórtico}
+  \frametitle{pyFEM}
+  \framesubtitle{Elemento tipo pórtico}
   \begin{figure}
     \centering
     \begin{tikzpicture}[coords]
@@ -174,9 +193,9 @@
   \end{figure}
 \end{frame}
 
-\subsubsection{Matriz de rigidez}
 \begin{frame}
-  \frametitle{Matriz de rigidez}
+  \frametitle{pyFEM}
+  \framesubtitle{Matriz de rigidez}
   \begin{equation}
     \begin{bNiceArray}{CCCCCCCCCCCC}[small,
       first-row,
@@ -203,9 +222,9 @@
   \end{equation}
 \end{frame}
 
-\subsection{Teorema de rotación de Euler}
 \begin{frame}
-  \frametitle{Teorema de rotación de Euler}
+  \frametitle{pyFEM}
+  \framesubtitle{Teorema de rotación de Euler}
   \begin{columns}
     \column{0.5\textwidth}
     \begin{block}{Definición}
@@ -219,9 +238,9 @@
   \end{columns}      
 \end{frame}
 
-\subsection{Rotación del sistema de coordenadas}
 \begin{frame}
-  \frametitle{Rotación del sistema de coordenadas}
+  \frametitle{pyFEM}
+  \framesubtitle{Rotación del sistema de coordenadas}
   \begin{columns}
     \column{0.5\textwidth}
     El ángulo $ \theta $ y el vector $ n $  que definen la rotación del eje $ x $ del sistema de coordenadas global hacia el eje $ x_m $ del sistema de coordenadas de un elemento se puede calcular como
@@ -236,9 +255,9 @@
   \end{columns}
 \end{frame}
 
-\subsection{Representación de la rotación como un cuaternión}
 \begin{frame}
-  \frametitle{Representación de la rotación como un cuaternión}
+  \frametitle{pyFEM}
+  \framesubtitle{Representación de la rotación como un cuaternión}
   Según \cite{dunn20023d}, la rotación de un sistema de coordenadas tridimensionales alrededor del eje $ \boldsymbol{n} $ una cantidad $ \boldsymbol{\theta} $ se puede describir mediante un \emph{cuaternión} como
   \begin{equation}
     \boldsymbol{q} =
@@ -258,5 +277,75 @@
       2xz + 2wy & 2yz-2wx & 1 - 2x^2 - 2y^2
     \end{bNiceMatrix}
   \end{equation}
+\end{frame}
+
+\section{Implementación de los cuaterniones}
+\begin{frame}[fragile]
+  \frametitle{Implementación de los cuaterniones}
+
+  \begin{lstlisting}[language=Python]
+    class Frame(AttrDisplay, metaclass=UniqueInstances):
+        __slots__ = ('joint_j', 'joint_k', 'material', 'section')
+
+        def __init__(self, joint_j=None, joint_k=None, material=None, section=None):
+            self.joint_j = joint_j
+            self.joint_k = joint_k
+            self.material = material
+            self.section = section
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Implementación de los cuaterniones}
+
+  \begin{lstlisting}[language=Python]
+    class Frame(AttrDisplay, metaclass=UniqueInstances):
+        def get_length(self):
+            return distance.euclidean(self.joint_j.get_coordinate(), self.joint_k.get_coordinate())
+
+        def get_direction_cosines(self):
+            vector = self.joint_k.get_coordinate() - self.joint_j.get_coordinate()
+
+            return vector / linalg.norm(vector)
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Implementación de los cuaterniones}
+ 
+  \begin{lstlisting}[language=Python]
+    def get_rotation(self):
+        v_from = np.array([1, 0, 0])
+        v_to = self.get_direction_cosines()
+        if np.all(v_from == v_to):
+            return Rotation.from_quat([0, 0, 0, 1])
+        elif np.all(v_from == -v_to):
+            return Rotation.from_quat([0, 0, 1, 0])
+        else:
+            w = np.cross(v_from, v_to)
+            w = w / linalg.norm(w)
+            theta = np.arccos(np.dot(v_from, v_to))
+            return Rotation.from_quat([x * np.sin(theta/2) for x in w] +
+                   [np.cos(theta/2)])
+  \end{lstlisting}
+\end{frame}
+
+\section{Conclusiones}
+\begin{frame}
+  \frametitle{Conclusiones}
+  Durante el ejercicio de la profesión como ingenieros civiles es habitual que usemos diferentes programas comerciales para el análisis y diseño de estructuras, con la imposibilidad de saber exactamente que rutinas siguen para llegar a los resultados que nos presentan. \\[2ex]
+
+  La intención con este trabajo es dar el primer paso para crear una herramienta a \emph{código abierto} para permitirle a los ingenieros depurar el programa para constatar que los cálculos realizados por el programa son los correctos.
+\end{frame}
+
+\section{Bibliografía}
+\begin{frame}
+  \frametitle{Bibliografía}
+  \printbibliography
+\end{frame}
+
+\begin{frame}
+  \centering \Large
+  \emph{Gracias}
 \end{frame}
 \end{document}
